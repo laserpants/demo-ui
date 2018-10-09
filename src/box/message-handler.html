@@ -16,21 +16,21 @@
       },
 
       ready: function() {
-        this.connect();
+        //this.connect();
       },
 
       hasDisconnected: function() {
-        window.__socket.onclose = function () {}; 
-        window.__socket.close()
-        window.__socket = null;
+        //window.__socket.onclose = function () {}; 
+        //window.__socket.close()
+        //window.__socket = null;
       },
 
       connect: function() {
-        window.__socket = new WebSocket(this._getHostUrl());
-        window.__socket.onerror = this.onError.bind(this);
-        window.__socket.onopen = this.onOpen.bind(this);
-        window.__socket.onclose = this.onClose.bind(this);
-        window.__socket.onmessage = this.onMessage.bind(this);
+        //window.__socket = new WebSocket(this._getHostUrl());
+        //window.__socket.onerror = this.onError.bind(this);
+        //window.__socket.onopen = this.onOpen.bind(this);
+        //window.__socket.onclose = this.onClose.bind(this);
+        //window.__socket.onmessage = this.onMessage.bind(this);
       },
 
       onError: function(event) {
@@ -64,7 +64,7 @@
           console.log('>>>>>>>>>>>>>>> (send)');
           console.log(data);
         }
-        window.__socket.send(JSON.stringify(data));
+        //window.__socket.send(JSON.stringify(data));
       },
 
       _getURLParameter: function(name) {
