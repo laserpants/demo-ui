@@ -1,0 +1,85 @@
+<link rel="import" href="../../bower_components/polymer/polymer.html">
+
+<dom-module id="message-hander">
+  <template></template>
+  <script>
+
+    Polymer({
+
+      is: 'message-handler',
+
+      properties: {
+        debug: {
+          type: Boolean,
+          value: false,
+        },
+      },
+
+      ready: function() {
+        this.connect();
+      },
+
+      hasDisconnected: function() {
+        window.__socket.onclose = function () {}; 
+        window.__socket.close()
+        window.__socket = null;
+      },
+
+      connect: function() {
+        window.__socket = new WebSocket(this._getHostUrl());
+        window.__socket.onerror = this.onError.bind(this);
+        window.__socket.onopen = this.onOpen.bind(this);
+        window.__socket.onclose = this.onClose.bind(this);
+        window.__socket.onmessage = this.onMessage.bind(this);
+      },
+
+      onError: function(event) {
+        this.fire('error', event);
+      },
+
+      onOpen: function(event) {
+        this.fire('open');
+      },
+
+      onClose: function(event) {
+        this.fire('close');
+      },
+
+      onMessage: function(event) {
+        var response = null;
+        try {
+          response = JSON.parse(event.data);
+        } catch(e) {
+          console.error(e);
+          return;
+        }
+        this.fire('message', response);
+      },
+
+      send: function(data) {
+        if (!window.__socket) {
+          return;
+        }
+        if (this.debug && data.event != 'ping') {
+          console.log('>>>>>>>>>>>>>>> (send)');
+          console.log(data);
+        }
+        window.__socket.send(JSON.stringify(data));
+      },
+
+      _getURLParameter: function(name) {
+        return decodeURIComponent((new RegExp('[?|&]' + name + '=' + '([^&;]+?)(&|#|;|$)').exec(location.search) || [null, ''])[1].replace(/\+/g, '%20')) || null;
+      },
+
+      _getHostUrl: function() {
+        var hostUrl = 'ws://' + (this._getURLParameter('host_url') || (window.location.hostname + ':19998')); // thehangar.farmradio.org:51234
+        if (this.debug) {
+          console.log('Host: ' + hostUrl);
+        }
+        return hostUrl;
+      },
+
+    });
+
+  </script>
+</dom-module>

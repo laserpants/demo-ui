@@ -1,0 +1,51 @@
+<link rel="import" href="../../bower_components/polymer/polymer.html">
+
+<dom-module id="channel-mode">
+  <template>
+    <style>
+
+      .contact-primary {
+        color: #737373; 
+        margin: 5px 0;
+      }
+
+      .contact-secondary {
+        margin-top: -4px; 
+        font-size: 13px;
+      }
+
+      .container {
+        text-align: center; 
+        margin: 10px 0;
+      }
+
+      p.title {
+        font-size: 20px; 
+        margin: 0; 
+        color: #1a88ae;
+      }
+
+    </style>
+    <div class="container">
+      <p class="title">
+        [[title]]
+      </p>
+      <p class="contact-primary">
+        [[contactPrimary]]
+      </p>
+      <template is="dom-if" if="[[hasContactName]]">
+        <p class="contact-secondary">
+          [[contactSecondary]]
+        </p>
+      </template>
+      <content></content>
+    </div>
+  </template>
+  <script>
+    Polymer({
+
+      is: 'channel-mode',
+
+    });
+  </script>
+</dom-module>

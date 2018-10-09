@@ -1,0 +1,97 @@
+<link rel="import" href="../bower_components/paper-button/paper-button.html">
+<link rel="import" href="../bower_components/paper-dialog/paper-dialog.html">
+<link rel="import" href="../bower_components/polymer/polymer.html">
+
+<dom-module id="restart-dialog">
+  <template>
+    <style>
+
+      paper-dialog {
+        min-height: 130px;
+      }
+
+      paper-button {
+        color: rgb(0, 188, 212);
+        width: 100%;
+      }
+
+    </style>
+    <paper-dialog 
+      id                     = "dialog"
+      style                  = "width: 250px;"
+      opened                 = "{{opened}}">
+      <div>
+        <paper-button 
+          on-tap             = "restartBox">
+          Restart Voxbox
+        </paper-button>
+      </div>
+      <!--
+      <template 
+        is                   = "dom-repeat" 
+        items                = "{{channels}}" 
+        as                   = "modem">
+        <div>
+          <paper-button 
+            data-args$       = "[[modem.id]]" 
+            on-tap           = "restartModems">
+            Restart [[modem.id]]
+          </paper-button>
+        </div>
+      </template>
+      <div>
+        <paper-button 
+          on-tap             = "restartAsterisk">
+          Restart Asterisk
+        </paper-button>
+      </div>
+      -->
+    </paper-dialog>
+  </template>
+  <script>
+
+    Polymer({
+
+      is: 'restart-dialog',
+
+      properties: {
+        opened: {
+          type: Boolean,
+          value: false,
+        },
+      },
+
+      open: function() {
+        this.$.dialog.open();
+      },
+
+      close: function() {
+        this.$.dialog.close();
+      },
+
+      restartBox: function() {
+        this.fire('xml-http-request', {
+          action: 'systemRestart',
+          reason: 'User initiated',
+        });
+        this.close();
+      },
+
+      /*
+      restartModems: function(e) {
+        var modem = e.target.getAttribute('data-args');
+        this.fire('xml-http-request', {
+          reason: 'Initiated by user',
+          name: modem,
+        });
+      },
+
+      restartAsterisk: function() {
+        this.fire('xml-http-request', 'asterisk');
+      },
+      */
+
+    });
+
+  </script>
+</dom-module>

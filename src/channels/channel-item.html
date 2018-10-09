@@ -1,0 +1,448 @@
+<link rel="import" href="../../bower_components/iron-icon/iron-icon.html">
+<link rel="import" href="../../bower_components/iron-icons/device-icons.html">
+<link rel="import" href="../../bower_components/iron-icons/image-icons.html">
+<link rel="import" href="../../bower_components/iron-icons/iron-icons.html">
+<link rel="import" href="../../bower_components/iron-icons/social-icons.html">
+<link rel="import" href="../../bower_components/paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../../bower_components/paper-item/paper-icon-item.html">
+<link rel="import" href="../../bower_components/paper-item/paper-item.html">
+<link rel="import" href="../../bower_components/paper-menu-button/paper-menu-button.html">
+<link rel="import" href="../../bower_components/paper-menu/paper-menu.html">
+<link rel="import" href="../../bower_components/paper-progress/paper-progress.html">
+<link rel="import" href="../../bower_components/paper-slider/paper-slider.html">
+<link rel="import" href="../../bower_components/polymer/polymer.html">
+<link rel="import" href="channel-controls.html">
+<link rel="import" href="channel-mode.html">
+
+<dom-module id="channel-item">
+  <template>
+    <style>
+
+      :host {
+        display: flex;
+      }
+
+      .channel {
+        width: 260px; 
+        margin: 10px;
+      }
+
+      .channel-levels {
+        display: flex; 
+        margin-top: 8px;
+      }
+
+      .channel-container {
+        margin: 12px; 
+        min-height: 100px; 
+        display: flex; 
+        flex-direction: column; 
+        justify-content: space-around;
+      }
+
+      .channel-header {
+        display: flex; 
+        justify-content: 
+        flex-end; 
+        align-items: center; 
+        float: right;
+      }
+
+      .channel-description {
+        display: flex;
+      }
+
+      .provider {
+        color: #737373;
+        font-size: 13px;
+      }
+
+      .network-mode {
+        background: grey; 
+        color: white; 
+        display: flex; 
+        margin: 0 12px; 
+        padding: 0 6px;
+        justify-content: center; 
+        align-items: center; 
+        font-size: 12px; 
+        font-weight: bold;
+      }
+
+      .timer {
+        float: right; 
+        text-align: right; 
+        margin-top: 43px;
+      }
+
+      .phone-number {
+        color: #737373; 
+        font-size: 13px;
+      }
+
+      .defunct {
+        display: flex; 
+        align-items: center; 
+        font-size: 14px; 
+        color: #adadad; 
+        text-align: center;
+      }
+
+      .indicator {
+        margin: 0 auto; 
+        background: #f50057; 
+        display: flex; 
+        justify-content: center; 
+        align-items: center; 
+        border-radius: 50%; 
+        width: 100px; 
+        height: 100px; 
+      }
+
+      .ring {
+        color: white;
+      }
+
+      .on-hold {
+        background-color: #ffeb3b;
+      }
+
+      .on-air {
+        background-color: #ff5722;
+        color: white;
+      }
+
+      .ring.indicator iron-icon {
+        zoom: 120%;
+      }
+
+      paper-material {
+        background: white;
+        @apply(--layout-vertical);
+        justify-content: space-between;
+        border-radius: 3px;
+      }
+
+      paper-item-body {
+        justify-content: flex-start;
+      }
+
+      paper-button {
+        color: rgb(0, 188, 212);
+        font-size: 13px;
+      }
+
+      paper-progress.blue {
+        --paper-progress-active-color: var(--paper-light-blue-500);
+        --paper-progress-secondary-color: var(--paper-light-blue-100);
+        width: 100%;
+      }
+
+    </style>
+    <div class="channel">
+      <paper-material>
+        <div class                 = "channel-container">
+          <div class               = "channel-header">
+            <div class             = "provider">
+              [[provider]]
+            </div>
+            <div 
+              hidden$              = "[[!networkMode]]" 
+              class                = "network-mode">
+              [[networkMode]]
+            </div>
+            <iron-icon icon        = "[[signalStrengthIcon]]"></iron-icon>
+          </div>
+          <div 
+            class                  = "channel-description"> 
+            <paper-item-body 
+              two-line>
+              <div>[[channelId]]</div>
+              <div 
+                class              = "phone-number">[[phoneNumber]]</div>
+            </paper-item-body>
+            <div class             = "timer">[[timer]]</div>
+          </div>
+          <template 
+            is                     = "dom-if" 
+            if                     = "[[isOutgoingCall(mode, direction)]]">
+            <channel-mode
+              title                = "Calling"
+              contact-primary      = "[[contactPrimary]]"
+              contact-secondary    = "[[contactSecondary]]"
+              has-contact-name     = "[[hasContactName]]">
+              <div style           = "width: 100%; margin: 8px 0;">
+                <paper-progress
+                  indeterminate
+                  class            = "blue">
+                </paper-progress>
+              </div>
+              <paper-button on-tap = "setChannelFree">Cancel</paper-button>
+              <paper-button on-tap = "handleEditContact">Edit</paper-button>
+            </channel-mode>
+          </template>
+          <template 
+            is                     = "dom-if" 
+            if                     = "[[isIncomingCall(mode, direction)]]">
+            <div 
+              class                = "ring indicator">
+              <iron-icon 
+                icon               = "social:notifications-active" 
+                class              = "faa-ring animated"></iron-icon>
+            </div>
+            <channel-mode
+              title                = "Incoming call"
+              contact-primary      = "[[contactPrimary]]"
+              contact-secondary    = "[[contactSecondary]]"
+              has-contact-name     = "[[hasContactName]]">
+              <div>
+                <paper-button on-tap = "setChannelMaster">Answer</paper-button>
+                <paper-button on-tap = "setChannelFree">Reject</paper-button>
+                <paper-button on-tap = "handleEditContact">Edit</paper-button>
+              </div>
+            </channel-mode>
+          </template>
+          <template 
+            is                     = "dom-if" 
+            if                     = "[[isOnHold(mode)]]">
+            <div 
+              class                = "on-hold indicator">
+              <iron-icon icon      = "av:pause"></iron-icon>
+            </div>
+            <channel-mode
+              title                = "On hold"
+              contact-primary      = "[[contactPrimary]]"
+              contact-secondary    = "[[contactSecondary]]"
+              has-contact-name     = "[[hasContactName]]">
+              <div>
+                <paper-button on-tap = "setChannelMaster">Resume</paper-button>
+                <paper-button on-tap = "setChannelFree">Hang up</paper-button>
+                <paper-button on-tap = "handleEditContact">Edit</paper-button>
+              </div>
+            </channel-mode>
+          </template>
+          <template 
+            is                     = "dom-if" 
+            if                     = "[[isOnAir(mode)]]">
+            <div 
+              class                = "on-air indicator">
+              <iron-icon icon      = "av:mic"></iron-icon>
+            </div>
+            <channel-mode
+              title                = "On air"
+              contact-primary      = "[[contactPrimary]]"
+              contact-secondary    = "[[contactSecondary]]"
+              has-contact-name     = "[[hasContactName]]">
+              <div>
+                <paper-button on-tap = "setChannelOnHold">Hold</paper-button>
+                <paper-button on-tap = "setChannelFree">Hang up</paper-button>
+                <paper-button on-tap = "handleEditContact">Edit</paper-button>
+              </div>
+            </channel-mode>
+          </template>
+          <div 
+            style                  = "flex: 1;">
+          </div>
+          <template 
+            is                     = "dom-if" 
+            if                     = "[[isActive(mode)]]">
+            <div 
+              class                = "channel-levels">
+              <paper-icon-button 
+                id                 = "mute-button"
+                on-tap             = "toggleMuted"
+                active             = "{{muted}}"
+                toggles            = "true"
+                icon               = "[[muteIcon(muted)]]">
+              </paper-icon-button>
+              <paper-slider
+                value              = "{{level}}"
+                on-value-changed   = "handleSliderChange"
+                pin>
+              </paper-slider>
+            </div>
+          </template>
+          <template 
+            is                     = "dom-if" 
+            if                     = "[[!isActive(mode)]]">
+            <div 
+              class                = "defunct"> 
+              <iron-icon            
+                icon               = "communication:no-sim" 
+                style              = "margin-right: 4px;">
+              </iron-icon>
+              Defunct channel
+            </div>
+          </template>
+          <channel-controls
+            id                   = "controls"
+            channel-id           = "[[channelId]]"
+            mode                 = "[[mode]]"
+            direction            = "[[direction]]"
+            contact-primary      = "[[contactPrimary]]"
+            contact-secondary    = "[[contactSecondary]]">
+          </channel-controls>
+          </template>
+        </div>
+      </paper-material>
+    </div>
+  </template>
+  <script>
+
+    Polymer({
+
+      is: 'channel-item',
+
+      properties: {
+        channelId: {
+          type: Number,
+        },
+        provider: {
+          type: String,
+          value: '',
+        },
+        networkMode: {
+          type: String,
+          value: '',
+        },
+        signalStrengthIcon: {
+          type: String,
+          value: '',
+        },
+        direction: {
+          type: String,
+          value: '',
+        },
+        mode: {
+          type: String,
+          value: '',
+        },
+        muted: {
+          type: Boolean,
+          value: false,
+        },
+        level: {
+          type: Number,
+          value: 0,
+        },
+        timer: {
+          type: String,
+          computed: 'computedTimer(mode, hours, minutes)',
+        },
+        timestamp: {
+          type: Number,
+          value: 0,
+        },
+        contactPrimary: {
+          type: String,
+        },
+        contactSecondary: {
+          type: String,
+        },
+        phoneNumber: {
+          type: String,
+        },
+        hasContactName: {
+          type: Boolean,
+          value: false,
+        },
+      },
+
+      ready: function() {
+        window.setInterval(function() {
+          var now = Date.now() - this.diff;
+          this.set('hours', moment(now).diff(this.timestamp, 'hours'));
+          this.set('minutes', moment(Math.max(0, moment(now).diff(this.timestamp))).format('mm:ss'));
+        }.bind(this), 1000);
+      },
+
+      handleSliderChange: function(e) {
+        var data = {};
+        data[this.channelId] = e.target.value;
+        this.fire('message', {
+          event: 'channelVolume',
+          data: data,
+        });
+      },
+
+      setChannelOnHold: function() {
+        this.setChannelMode('on_hold');
+      },
+
+      setChannelMaster: function() {
+        this.setChannelMode('master');
+      },
+
+      setChannelFree: function() {
+        this.setChannelMode('free');
+      },
+
+      setChannelMode: function(mode) {
+        var data = {};
+        data[this.channelId] = mode;
+        this.fire('message', {
+          event: 'channelMode',
+          data: data,
+        });
+      },
+
+      toggleMuted: function(e) {
+        var data = {};
+        var button = document.querySelector('paper-icon-button#mute-button');
+        data[this.channelId] = !!button.active;
+        this.fire('message', {
+          event: 'channelMuted',
+          data: data,
+        });
+      },
+
+      handleEditContact: function() {
+        this.$.controls.handleEditContact();
+      },
+
+      muteIcon: function(muted) {
+        return muted ? 'av:volume-off' : 'av:volume-up';
+      },
+
+      isActive: function(mode) {
+        return 'defunct' !== mode;
+      },
+
+      isFree: function(mode) {
+        return 'free' === mode;
+      },
+
+      computedTimer: function(mode, hours, minutes) {
+        if ('on_hold' === mode) {
+          return 'On hold';
+        }
+        if ('master' === mode) {
+          if (hours > 0) {
+            return hours + ':' + minutes;
+          }
+          return minutes;
+        } else {
+          return '';
+        }
+      },
+
+      isIncomingCall: function(mode, direction) {
+        return 'ring' === mode && 'incoming' === direction;
+      },
+
+      isOutgoingCall: function(mode, direction) {
+        return 'ring' === mode && 'outgoing' === direction;
+      },
+
+      isOnHold: function(mode) {
+        return 'on_hold' === mode;
+      },
+
+      isOnAir: function(mode) {
+        return 'master' === mode;
+      },
+
+    });
+
+  </script>
+</dom-module>

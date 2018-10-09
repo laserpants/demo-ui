@@ -1,0 +1,233 @@
+<link rel="import" href="../../bower_components/app-storage/app-network-status-behavior.html">
+<link rel="import" href="../../bower_components/paper-fab/paper-fab.html">
+<link rel="import" href="../../bower_components/polymer/polymer.html">
+<link rel="import" href="../messages/message-compose-dialog.html">
+<link rel="import" href="call-dialog.html">
+<link rel="import" href="channel-item.html">
+
+<dom-module id="channel-list">
+  <template>
+    <style>
+
+      :host {
+        display: flex;
+      }
+
+      paper-fab {
+        position: fixed;
+        right: 30px;
+        bottom: 30px;
+        --paper-fab-background: rgb(0, 188, 212); 
+        z-index: 2;
+      }
+
+      .channel-container {
+        width: 100%;
+        display: flex; 
+        flex-flow: wrap row; 
+        overflow: auto;
+        margin: 50px;
+      }
+
+    </style>
+    <call-dialog
+      id                       = "call-dialog"
+      on-confirmed             = "handleCall"
+      channels                 = "[[activeChannels]]">
+    </call-dialog>
+    <message-compose-dialog
+      id                       = "message-compose-dialog"
+      on-confirmed             = "handleSendMessage"
+      channels                 = "[[activeChannels]]">
+    </message-compose-dialog>
+    <div class                 = "channel-container">
+      <template                
+        is                     = "dom-repeat" 
+        items                  = "[[channels]]" 
+        as                     = "channel">
+        <channel-item 
+          diff                 = "[[diff]]"
+          channel-id           = "[[channel.id]]"
+          mode                 = "[[channel.mode]]"
+          direction            = "[[channel.direction]]"
+          timestamp            = "[[channel.timestamp]]"
+          phone-number         = "[[channel.number]]"
+          muted                = "{{channel.muted}}"
+          level                = "{{channel.level}}"
+          provider             = "[[computedProvider(channel, channel.*)]]"
+          network-mode         = "[[computedNetworkMode(channel, channel.*)]]"
+          signal-strength-icon = "[[computedSignalStrengthIcon(channel, channel.*)]]"
+          contact-primary      = "[[computedContactPrimary(channel, channel.*)]]"
+          contact-secondary    = "[[computedContactSecondary(channel, channel.*)]]"
+          has-contact-name     = "[[hasContactName(channel, channel.*)]]"
+          on-show-call-dialog  = "openCallDialog"
+          on-call-number       = "onCallNumber"
+          on-send-sms          = "onSendMessage">
+        </channel-item>
+      </template>
+    </div>
+    <paper-fab 
+       on-tap                  = "openCallDialog" 
+       icon                    = "communication:dialpad">
+    </paper-fab>
+  </template>
+  <script>
+
+    Polymer({
+
+      is: 'channel-list',
+
+      properties: {
+        channels: {
+          type: Array,
+          value: [],
+        },
+        activeChannels: {
+          type: Array,
+          computed: 'computedActiveChannels(channels, channels.*)',
+        },
+      },
+
+      behaviors: [
+        Polymer.AppNetworkStatusBehavior, 
+      ],
+
+      onCallNumber: function(e) {
+        var dialog = this.$['call-dialog'];
+        Polymer.dom(document.querySelector('body')).appendChild(dialog);
+        dialog.open();
+        var channel = e.detail;
+        if (channel) {
+          dialog.number = channel.number;
+          dialog.channel = channel.id;
+        }
+      },
+
+      onSendMessage: function(e) {
+        var dialog = this.$['message-compose-dialog'];
+        Polymer.dom(document.querySelector('body')).appendChild(dialog);
+        dialog.open();
+        var channel = e.detail;
+        if (channel) {
+          dialog.number = channel.number;
+          dialog.channel = channel.id;
+        }
+      },
+
+      computedProvider: function(channel) {
+        if (channel.connection) {
+          var provider = channel.connection.provider;
+          return ('NONE' == provider) ? '' : provider;
+        }
+        return '';
+      },
+
+      computedNetworkMode: function(channel) {
+        if (channel.connection) {
+          var mode = channel.connection.mode;
+          switch (mode) {
+            case 'GSM/GPRS':
+              return '2G';
+            default:
+              return mode;
+          }
+        }
+        return '';
+      },
+
+      computedSignalStrengthIcon: function(channel) {
+        var online = this.online;
+        if (channel.connection) {
+          var rssi = channel.connection.rssi;
+          if (!rssi) {
+            return 'device:signal-cellular-null';
+          }
+          var s = parseInt(rssi.split(',')[0]);
+          if (!s) {
+            return 'device:signal-cellular-null';
+          }
+          var quality = Math.min(4, Math.floor(s/6));
+          var warn = online ? '' : 'connected-no-internet-';
+          return 'device:signal-cellular-' + warn + quality + '-bar';
+        }
+        return 'device:signal-cellular-null';
+      },
+
+      computedActiveChannels: function(channels) {
+        return channels.filter(function(channel) {
+          return 'free' === channel.mode;
+        }.bind(this));
+      },
+
+      computedContactPrimary: function(channel) {
+        var contact = channel.contact;
+        if (!contact) {
+          return '';
+        }
+        if (this.hasContactName(channel)) {
+          return contact.name;
+        }
+        return contact.number;
+      },
+
+      computedContactSecondary: function(channel) {
+        var contact = channel.contact;
+        if (!contact || !this.hasContactName(channel)) {
+          return '';
+        }
+        return contact.number;
+      },
+
+      hasContactName: function(channel) {
+        var contact = channel.contact;
+        return !!(contact 
+          && contact.name 
+          && contact.name !== channel.id);
+      },
+
+      openCallDialog: function(e) {
+        var dialog = this.$['call-dialog'];
+        Polymer.dom(document.querySelector('body')).appendChild(dialog);
+        dialog.open();
+        if (e && e.detail && 'object' !== typeof(e.detail)) {
+          dialog.channel = e.detail;
+        }
+      },
+
+      handleSendMessage: function() {
+        var dialog = this.$['message-compose-dialog'];
+        var message = {
+          type: 'sms_out',
+          endpoint: dialog.number,
+          content: dialog.message,
+          channel_id: ('__auto__' === dialog.channel ? null : dialog.channel),
+        };
+        var id = (Date.now()+'').substr(-8) + (++this._messageCount);
+        var payload = {};
+        payload[id] = message;
+        this.fire('message', {
+          event: 'messageSend',
+          data: payload,
+        });
+      },
+ 
+      handleCall: function() {
+        var dialog = this.$['call-dialog'];
+        this.fire('message', {
+          event: 'callNumber',
+          data: {
+            number: dialog.number,
+            mode: 'master',
+            channel_id: ('__auto__' === dialog.channel ? null : dialog.channel),
+          },
+        });
+        var toast = document.createElement('paper-toast');
+        toast.text = 'Calling ' + dialog.number;             
+        document.body.appendChild(toast); 
+        toast.show();
+      },
+
+    });
+
+  </script>
+</dom-module>
